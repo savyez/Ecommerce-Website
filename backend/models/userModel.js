@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import validator from "validator";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 
 const userSchema = new mongoose.Schema({
@@ -44,15 +45,13 @@ const userSchema = new mongoose.Schema({
 })
 
 // Password hashing
-userSchema.pre("save", async function(next) {
-    this.password = await bcryptjs.hash(this.password, 10)
-
+userSchema.pre("save", async function() {
     // If User updates profile do not hash the password again
     // If User updates the password then we'll hash the new password
     if(!this.isModified("password")) {
-        return next();
+        return;
     }
-
+    this.password = await bcryptjs.hash(this.password, 10);
 })
 
 userSchema.methods.getJWTToken = function () {
@@ -66,5 +65,14 @@ userSchema.methods.verifyPassword = async function(userEnteredPassword) {
     return await bcryptjs.compare(userEnteredPassword, this.password);
 }
 
+// generaiting token
+userSchema.methods.generatePasswordRestToken = function() {
+    const resetToken = crypto.randomBytes(20).toString('hex');
+    this.resetPasswordToken = crypto.createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+    this.resetPasswordExpire = Date.now()+30*60*1000    // 30minutes
+    return resetToken;
+}
 
 export default mongoose.model("User", userSchema);
