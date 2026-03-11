@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { type } from "os";
 
 const productSchema = new mongoose.Schema({
     name: {
@@ -48,6 +49,11 @@ const productSchema = new mongoose.Schema({
     },
     reviews: [
         {
+            user: {
+                type: mongoose.Schema.ObjectId,
+                ref: "User",
+                reqired: true
+            },
             name: {
                 type: String, 
                 required: true
