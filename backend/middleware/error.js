@@ -9,6 +9,12 @@ export default (err, req, res, next) => {
         const message = `This is invalid resource ${err.path}`;
         err = new HandleError(message, 404);
     }
+
+    // Duplicate key error
+    if(err.code === 11000) {
+        const message = `This ${Object.keys(err.keyValue)} already exists, Please Log In`;
+        err = new HandleError(message, 400);
+    }
     
     res.status(err.statusCode).json({
         success: false,
