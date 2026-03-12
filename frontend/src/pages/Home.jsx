@@ -5,9 +5,9 @@ import Navbar from "../components/Navbar.jsx";
 import Product from "../components/Product.jsx";
 import ImageSlider from "../components/ImageSlider.jsx";
 import PageTitle from "../components/PageTitle.jsx";
+import Loader from "../components/Loader.jsx";
 import {useDispatch, useSelector} from "react-redux";
-import { getProduct } from "../features/products/productSlice.js";
-
+import { getProduct, removeErrors } from "../features/products/productSlice.js";
 
 
 function Home() {
@@ -19,19 +19,30 @@ function Home() {
     dispatch(getProduct());
     }, [dispatch]);
 
+    useEffect(() => {
+    if(error) {
+        console.error(error.message, {position: 'top-center', autoClose: 3000});
+        dispatch(removeErrors())
+    }
+    }, [dispatch, error]);
+
 
     return (
-    <>
+        <>
+    {loading ? <Loader /> : (<>
     <PageTitle title = "Home" />
     <Navbar />
     <ImageSlider />
     <div className="home-container">
         <h2 className="home-heading">Trending Now</h2>
-        {products.map((product, index) => (
-        <Product product={product} key={index} />
-        ))}
+        <div className="home-product-container">
+            {products.map((product, index) => (
+            <Product product={product} key={index} />
+            ))}
+        </div>
         <Footer />
     </div>
+    </>)}
     </>
     )
 }
