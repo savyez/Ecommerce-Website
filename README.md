@@ -1,24 +1,86 @@
-# Ecommerce Platform
+# ShopEz Ecommerce Platform
 
-This repository is a full-stack ecommerce application split into two independently runnable parts:
+ShopEz is a full-stack ecommerce application built as a backend-first project with an actively integrated frontend. The repository contains a Node.js + Express + MongoDB API and a React + Vite client that already consumes live product data through Redux Toolkit.
 
-- `backend/`: a Node.js + Express + MongoDB REST API for authentication, catalog management, reviews, and order management
-- `frontend/`: a React + Vite client application that currently contains the initial app shell and routing foundation
+This README is the project-level document for the entire repository. It explains the system as a complete application, how the backend and frontend fit together, what is implemented today, and how the codebase is organized for further growth.
 
-The project is being built in layers. At the current stage, the backend contains most of the business logic, while the frontend is intentionally minimal and ready to consume the API.
+For module-specific documentation:
 
-## Project Objective
+- Backend documentation: [backend/README.md](./backend/README.md)
+- Frontend documentation: [frontend/README.md](./frontend/README.md)
 
-The goal of the project is to demonstrate a production-style ecommerce architecture with:
+## Project Summary
 
-- JWT-based authentication with HTTP-only cookies
-- role-based authorization for admin-only operations
-- product catalog APIs with filtering, search, pagination, and reviews
-- user profile management and password reset flows
-- order creation and admin order processing
-- a frontend application prepared to evolve from a basic routed shell into a complete customer-facing storefront
+The goal of this project is to implement the core architecture of an ecommerce system with:
 
-## Tech Stack
+- JWT-based authentication
+- role-based authorization for admin actions
+- product catalog browsing
+- product reviews and ratings
+- order management
+- a React storefront consuming the backend API
+
+The codebase is structured to reflect real application boundaries rather than a tutorial-style single-file implementation.
+
+## High-Level Architecture
+
+The repository is split into two application layers:
+
+```text
+Ecommerce/
+|- backend/
+|  |- config/
+|  |- controller/
+|  |- middleware/
+|  |- models/
+|  |- routes/
+|  `- utils/
+|- frontend/
+|  |- public/
+|  `- src/
+|- package.json
+`- README.md
+```
+
+### Backend role
+
+The backend is the business engine of the platform. It is responsible for:
+
+- user authentication and session handling
+- access control
+- product CRUD and reviews
+- order creation and admin order management
+- email-based password reset
+- persistence through MongoDB
+
+### Frontend role
+
+The frontend is the presentation and interaction layer. It is responsible for:
+
+- rendering the storefront UI
+- calling backend APIs
+- holding client-side global state
+- providing reusable visual components
+- composing page-level experiences
+
+## End-to-End Request Flow
+
+The current primary product flow works like this:
+
+1. The browser loads the frontend route `/`.
+2. `Home.jsx` mounts in the React app.
+3. The frontend dispatches `getProduct()` through Redux Toolkit.
+4. Axios calls `/api/v1/products`.
+5. Vite proxies the request to the local backend.
+6. Express routes the request to the product controller.
+7. The backend queries MongoDB through Mongoose.
+8. The API returns product data and pagination metadata.
+9. Redux updates `loading`, `products`, and `productCount`.
+10. The frontend re-renders the product cards.
+
+This is the first fully connected backend-to-frontend path in the project and acts as the pattern for future features.
+
+## Technology Stack
 
 ### Backend
 
@@ -26,272 +88,249 @@ The goal of the project is to demonstrate a production-style ecommerce architect
 - Express
 - MongoDB
 - Mongoose
-- JWT (`jsonwebtoken`)
-- Password hashing (`bcryptjs`)
-- Email delivery (`nodemailer`)
-- Cookie parsing (`cookie-parser`)
+- JSON Web Tokens
+- bcryptjs
+- cookie-parser
+- nodemailer
 
 ### Frontend
 
 - React 19
-- React Router
 - Vite
-- ESLint
+- React Router
+- Redux Toolkit
+- React Redux
+- Axios
+- Material UI icons
 
-## Repository Structure
+## Repository Design
 
-```text
-Ecommerce/
-├── backend/
-│   ├── config/
-│   ├── controller/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   └── utils/
-├── frontend/
-│   ├── public/
-│   └── src/
-└── README.md
-```
+The codebase is intentionally layered.
 
-## Architecture Overview
+### Backend structure
 
-### Backend flow
+- `routes/` defines URLs and middleware composition
+- `controller/` contains request and business logic
+- `models/` defines persistence rules and schema behavior
+- `middleware/` handles auth, async wrapping, and error translation
+- `utils/` contains reusable helpers such as JWT handling and API query helpers
 
-The backend follows a classic layered Express structure:
+### Frontend structure
 
-1. `routes/` defines endpoint paths and attaches middleware.
-2. `middleware/` handles auth, role checks, async error capture, and centralized error formatting.
-3. `controller/` contains the request handlers and business logic.
-4. `models/` defines MongoDB collections using Mongoose schemas.
-5. `utils/` contains reusable helpers such as JWT token handling, email sending, API query helpers, and custom errors.
+- `pages/` contains route-level screens
+- `components/` contains reusable UI parts
+- `features/` contains Redux domain logic
+- `app/` contains store configuration
+- style folders are separated by domain and responsibility
 
-### Frontend flow
+This structure keeps the project understandable at interview scale and maintainable at product scale.
 
-The frontend is currently a starter client:
+## Core Capabilities
 
-- `src/main.jsx` mounts the React application
-- `src/App.jsx` configures routing
-- `src/pages/Home.jsx` renders the root page at `/`
+### Authentication and authorization
 
-This means the backend is the core of the current implementation, while the frontend is the initial presentation layer to be expanded next.
-
-## Implemented Backend Modules
-
-### 1. Authentication and user management
-
-The authentication system supports:
+Implemented backend auth capabilities:
 
 - user registration
 - user login
 - logout
-- profile retrieval
-- profile update
+- profile retrieval and update
 - password update
-- forgot-password email flow
-- password reset using a time-bound token
+- forgot-password flow
+- password reset through token
 - admin user listing
-- admin single-user lookup
-- admin role updates
+- admin role changes
 - admin user deletion
 
-How it works:
+Auth design:
 
-- Passwords are hashed in a Mongoose pre-save hook.
-- JWTs are generated in the user model and sent back in an HTTP-only cookie.
-- Protected routes read the token from `req.cookies.token`.
-- Admin-only routes are protected through `roleBasedAccess("admin")`.
+- JWTs are generated on login/registration
+- tokens are stored in HTTP-only cookies
+- protected routes load the current user from the token
+- admin routes use role-based middleware
 
-### 2. Product management
+### Product module
 
-The product module supports:
+Implemented product capabilities:
 
 - public product listing
-- public single-product lookup
-- keyword-based search
-- query-based filtering
+- product search
+- product filtering
 - pagination
-- admin product creation
-- admin product update
-- admin product deletion
-- authenticated review creation/update
-- public review retrieval
-- authenticated review deletion
+- single-product retrieval
+- admin product create/update/delete
+- product review create/update
+- product review retrieval
+- product review deletion
 
-The API uses a dedicated `APIFunctionality` helper to keep search, filtering, and pagination logic reusable and separate from controllers.
+Backend support for product listing includes reusable query logic through `apiFunctionality.js`.
 
-### 3. Order management
+### Order module
 
-The order module supports:
+Implemented order capabilities:
 
 - authenticated order creation
-- authenticated retrieval of the logged-in user’s orders
-- admin retrieval of a single order
-- admin retrieval of all orders with aggregate `totalAmount`
+- logged-in user order history
+- admin order listing
+- admin single-order view
 - admin order status update
-- admin deletion of delivered orders
+- admin order deletion under defined conditions
 
-The order processing flow also reduces product stock when an admin updates order status through the current order handler.
+The order status update flow also changes stock levels for ordered items.
 
-## Data Model Summary
+### Frontend storefront foundation
+
+Implemented frontend capabilities:
+
+- routed single-page application shell
+- homepage composition
+- live product fetch from the backend
+- Redux-managed product state
+- loading state rendering
+- reusable navbar, footer, product card, rating, and image slider components
+- Vite proxy integration for backend communication
+
+## Current Application Surfaces
+
+### Backend route groups
+
+All backend routes are mounted under:
+
+```text
+/api/v1
+```
+
+Main route groups:
+
+- auth and user management
+- product and review management
+- order management
+
+### Frontend routes
+
+Current frontend route tree:
+
+- `/` -> `Home`
+
+The frontend structure is already prepared to expand into product details, cart, checkout, user profile, and admin routes.
+
+## Data Model Overview
+
+The backend currently revolves around three main entities:
 
 ### User
 
-The `User` model stores:
+Represents:
 
-- name
-- email
-- hashed password
-- avatar metadata
+- account identity
+- authentication credentials
 - role
-- password reset token and expiry
-- timestamps
+- password reset state
 
 ### Product
 
-The `Product` model stores:
+Represents:
 
-- name
-- description
-- price
-- ratings
-- image array
-- category
+- catalog item metadata
+- pricing
 - stock
-- review count
-- embedded reviews
-- reference to the user who created the product
+- images
+- reviews and aggregate rating
+- creating admin/user reference
 
 ### Order
 
-The `Order` model stores:
+Represents:
 
 - shipping information
-- ordered items
-- order status
-- user reference
-- payment info
+- ordered products
+- payment information
 - price breakdown
-- delivery time
-- creation time
+- lifecycle state such as processing or delivered
 
-## Backend API Summary
+### Model relationships
 
-All routes are mounted under `/api/v1`.
+At a conceptual level:
 
-### Auth and users
+- one user can create many orders
+- one user can author many product reviews
+- one product can have many reviews
+- one order contains many order items
+- each order item points to one product
 
-- `POST /register`
-- `POST /login`
-- `POST /logout`
-- `POST /password/forgot`
-- `POST /reset/:token`
-- `POST /profile`
-- `POST /profile/update`
-- `POST /password/update`
-- `GET /admin/users`
-- `GET /admin/user/:id`
-- `PUT /admin/user/:id`
-- `DELETE /admin/user/:id`
+## API and Frontend Integration
 
-### Products
+The frontend currently talks to the backend using Axios and a Vite development proxy.
 
-- `GET /products`
-- `GET /product/:id`
-- `GET /reviews`
-- `PUT /review`
-- `DELETE /reviews`
-- `GET /admin/products`
-- `POST /admin/product/create`
-- `PUT /admin/product/:id`
-- `DELETE /admin/product/:id`
+### Frontend API call style
 
-### Orders
+Example call pattern:
 
-- `POST /new/order`
-- `GET /orders/user`
-- `GET /admin/orders`
-- `GET /admin/order/:id`
-- `PUT /admin/order/:id`
-- `DELETE /admin/order/:id`
-
-## Query Features
-
-The product listing endpoint supports:
-
-- `keyword`: searches by product name using a case-insensitive regex
-- additional query-string filters: passed directly into the Mongo query
-- `page`: paginates results
-
-Example:
-
-```http
-GET /api/v1/products?keyword=jeans&page=2
+```text
+/api/v1/products
 ```
 
-## Error Handling Strategy
+### Why the proxy exists
 
-The backend uses a consistent error-handling pattern:
+The Vite proxy allows the frontend to call `/api/...` without hardcoding `http://127.0.0.1:8000` in UI components. During development, requests are forwarded to the Express server automatically.
 
-- `handleAsyncError` wraps async controllers and forwards errors
-- `HandleError` standardizes custom application errors
-- `middleware/error.js` converts known failures into readable API responses
+This keeps the frontend cleaner and makes local integration easier.
 
-Currently handled explicitly:
+## State Management
 
-- invalid MongoDB object IDs (`CastError`)
-- duplicate key violations such as repeated email addresses
+Redux Toolkit is already wired into the frontend.
 
-## Security and Auth Design
+Current global state coverage:
 
-The project currently uses:
+- product list
+- product count
+- loading status
+- error state
 
-- password hashing with `bcryptjs`
-- JWT token generation
-- HTTP-only cookies for session persistence
-- role-based authorization middleware
+This is important because it shows the frontend is no longer just static UI. It has already moved into application-state territory.
 
-Important note for reviewers: the repository currently includes a real-looking `backend/config/config.env`. In a production-ready version, secrets should never be committed and should instead be injected through environment configuration outside the repo.
+## Documentation Layout
 
-## Frontend Status
+This root README gives the system-level overview.
 
-The frontend is intentionally at an early stage.
+For deeper implementation detail:
 
-What exists today:
+- use `backend/README.md` for API, auth, models, routes, middleware, and backend flow
+- use `frontend/README.md` for page composition, Redux flow, UI structure, and frontend dev workflow
 
-- Vite-based React application setup
-- React Router configuration
-- root `Home` page at `/`
+This documentation split mirrors the codebase split.
 
-What this means:
-
-- the frontend is ready to grow into a full UI layer
-- most of the current project complexity and interview discussion value is in the backend architecture, API design, and data flow
-
-## Local Development Setup
+## Local Development
 
 ### Prerequisites
 
 - Node.js 18+
-- MongoDB running locally or a MongoDB connection string
+- MongoDB instance available locally or remotely
 
-### 1. Install backend dependencies
+### Install dependencies
+
+From the repository root:
 
 ```bash
 npm install
 ```
 
-### 2. Install frontend dependencies
+From the frontend directory:
 
 ```bash
 cd frontend
 npm install
 ```
 
-### 3. Configure backend environment variables
+### Configure backend environment variables
 
-Create or update `backend/config/config.env` with values like:
+Create or update:
+
+```text
+backend/config/config.env
+```
+
+Typical values:
 
 ```env
 PORT=8000
@@ -304,7 +343,7 @@ SMTP_MAIL=your_email@example.com
 SMTP_PASSWORD=your_app_password
 ```
 
-### 4. Start the backend
+### Run the backend
 
 From the repository root:
 
@@ -312,7 +351,7 @@ From the repository root:
 npm start
 ```
 
-### 5. Start the frontend
+### Run the frontend
 
 From the `frontend/` directory:
 
@@ -320,47 +359,48 @@ From the `frontend/` directory:
 npm run dev
 ```
 
-## Available Scripts
+## Scripts
 
 ### Root
 
-- `npm start`: starts the backend with `nodemon`
+- `npm start` -> starts the backend through nodemon
 
 ### Frontend
 
-- `npm run dev`: starts Vite development server
-- `npm run build`: creates a production build
-- `npm run preview`: previews the production build
-- `npm run lint`: runs ESLint
+- `npm run dev` -> start Vite dev server
+- `npm run build` -> create production build
+- `npm run preview` -> preview production build
+- `npm run lint` -> run ESLint
 
-## Current Strengths
+## Strengths of the Current Implementation
 
-- clean separation of routes, controllers, models, middleware, and utilities
-- practical auth flow with JWT cookies and role checks
-- reusable API query helper for product listing
-- complete review lifecycle support
-- initial admin tooling for catalog, users, and orders
-- straightforward structure that is easy to explain in an interview
+- clear separation of backend concerns
+- real authentication and role-based access control
+- reusable product query helper on the backend
+- end-to-end product data flow into the frontend
+- Redux already integrated rather than deferred
+- frontend component structure ready for expansion
+- backend and frontend both documented independently
 
-## Current Gaps and Next Steps
+## Current Maturity Level
 
-This project is already useful for demonstrating backend engineering decisions, but it is still in progress. The most natural next steps are:
+This project should be understood as:
 
-- build the real frontend UI for product listing, auth, cart, checkout, and admin views
-- add input validation at the route boundary
-- add automated tests for critical auth, review, and order flows
-- move secrets out of the repository
-- improve consistency in some route naming conventions
-- harden order total calculation by deriving totals on the server instead of trusting client input
+- beyond a starter scaffold
+- not yet a fully complete production ecommerce application
+- already strong enough to demonstrate architectural thinking, API design, state flow, and code organization
 
-## Interviewer Notes
+The backend is broader and more mature than the frontend today, but the frontend has already crossed the line from static mockup to integrated application client.
 
-If you are reviewing this project for engineering ability, the key areas to focus on are:
+## Known Gaps and Next Logical Steps
 
-- how authentication and authorization are structured
-- how resource ownership and admin access are separated
-- how Mongoose models support business rules
-- how controllers coordinate product, user, and order flows
-- how the codebase is organized to scale as features expand
+The most natural next steps are:
 
-At this stage, the project should be read as a backend-first ecommerce implementation with a frontend foundation already in place.
+- expand routing beyond the homepage
+- build product details and catalog pages
+- connect cart, shipping, payment, and order screens
+- improve request validation and frontend error presentation
+- add automated tests for backend flows and frontend state transitions
+- remove committed secrets from tracked configuration
+- strengthen consistency around naming and some route semantics
+
