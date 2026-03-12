@@ -12,6 +12,11 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.9",
+    "@mui/material": "^7.3.9",
+    "@mui/styled-engine": "^7.3.9",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "crypto": "^1.0.1",

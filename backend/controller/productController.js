@@ -17,7 +17,7 @@ export const createProducts = handleAsyncError(async (req, res, next) => {
 
 // Get all Products
 export const getAllProducts = handleAsyncError(async (req,res, next) => {
-    const resultsPerPage = 3
+    const resultsPerPage = 4
     const apiFeatures = new APIFunctionality(Product.find(), req.query)
     .search()
     .filter();
